@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "co.bird.battlebots.toby.proto";
+
+package toby;
+
+// The greeting service definition.
+service Observer {
+  // Sends a greeting
+  rpc SendObservation (ObservationRequest) returns (ActionReply) {}
+}
+
+// The observation request - send information to our gym.
+message ObservationRequest {
+  bytes image = 1;
+  bool done = 2;
+  Information info = 3;
+}
+
+// Information should return just about everything we know from self and radar.
+message Information {
+  double x_pos = 1;
+  double y_pos = 2;
+  double energy = 3; // Energy == health?
+}
+
+// The response message containing the greetings
+message ActionReply {
+  int32  ActionChoice = 1;
+}
