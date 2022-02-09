@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":robocode.host"))
     implementation("org.picocontainer:picocontainer:2.14.2")
     runtimeOnly(project(":robocode.repository"))
+    implementation(project(":robocode.grpc"))
 }
 
 description = "Robocode Battle"

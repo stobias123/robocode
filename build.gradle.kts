@@ -11,7 +11,6 @@ sourceSets {
     }
     kotlin {
         sourceSets.getByName("main").resources.srcDirs("stub/build/generated/source/proto/main/kotlin")
-        //sourceSets.getByName("main").resources.srcDirs("/Users/steven.tobias/repos/personal/robocode/stub/build/generated/source/proto/main/kotlin")
     }
 }
 
