@@ -6,15 +6,6 @@ plugins {
     idea
 }
 
-sourceSets {
-    java {
-    }
-    kotlin {
-        sourceSets.getByName("main").resources.srcDirs("stub/build/generated/source/proto/main/kotlin")
-    }
-}
-
-
 allprojects {
     repositories {
         mavenCentral()
