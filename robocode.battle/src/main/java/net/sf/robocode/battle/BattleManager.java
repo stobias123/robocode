@@ -147,7 +147,8 @@ public class BattleManager implements IBattleManager {
 			RandomFactory.resetDeterministic(Long.valueOf(seed));
 		}
 
-		Battle realBattle = Container.createComponent(Battle.class);
+		// TODO: I need to copypasta this whole fuckin method, but change out for gymbattle here.
+		GymBattle realBattle = Container.createComponent(GymBattle.class);
 		realBattle.setup(battlingRobotsList, battleProperties, isPaused());
 
 		battle = realBattle;
