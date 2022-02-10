@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
  * @author Pavel Savara (contributor)
  * @author Alexander Schultz (contributor)
  */
-public final class Battle extends BaseBattle {
+public class Battle extends BaseBattle {
 
 	private static final int DEBUG_TURN_WAIT_MILLIS = 10 * 60 * 1000; // 10 seconds
 
@@ -369,6 +369,8 @@ public final class Battle extends BaseBattle {
 	@Override
 	protected void runTurn() {
 		super.runTurn();
+
+		// This is where I need to wait.
 
 		loadCommands();
 
