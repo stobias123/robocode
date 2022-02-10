@@ -25,6 +25,7 @@ public class Module {
 		Container.cache.addComponent(IRecordManager.class, RecordManager.class);
 
 		Container.factory.addComponent(Battle.class);
+		Container.factory.addComponent(GymBattle.class);
 		Container.factory.addComponent(BattlePlayer.class);
 	}
 }

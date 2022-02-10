@@ -6,13 +6,15 @@ option java_package = "co.bird.battlebots.toby.proto";
 package toby;
 
 // The greeting service definition.
-service Observer {
+service Gym {
   // Sends a greeting
-  rpc SendObservation (ObservationRequest) returns (ActionReply) {}
+  rpc Step (StepRequest) returns (Observation) {}
 }
 
+message StepRequest {}
+
 // The observation request - send information to our gym.
-message ObservationRequest {
+message Observation {
   bytes image = 1;
   bool done = 2;
   Information info = 3;

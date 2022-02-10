@@ -1,29 +1,32 @@
 package net.sf.robocode.grpc.grpcServer;
 
 import co.bird.battlebots.toby.proto.ActionReply;
-import co.bird.battlebots.toby.proto.ObservationRequest;
+import co.bird.battlebots.toby.proto.GymGrpc;
+import co.bird.battlebots.toby.proto.StepRequest;
+import co.bird.battlebots.toby.proto.Observation;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import co.bird.battlebots.toby.proto.ObserverGrpc;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static net.sf.robocode.io.Logger.logMessage;
+
 public class BattleServer {
     private static final Logger logger = Logger.getLogger(BattleServer.class.getName());
 
     private Server server;
 
-    private void start() throws IOException {
+    public void start() throws IOException {
         /* The port on which the server should run */
         int port = 50051;
         server = ServerBuilder.forPort(port)
                 .addService(new ServerImpl())
                 .build()
                 .start();
-        logger.info("Server started, listening on " + port);
+        logMessage("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -63,13 +66,15 @@ public class BattleServer {
      }
      */
 
-    static class ServerImpl extends ObserverGrpc.ObserverImplBase {
+    static class ServerImpl extends GymGrpc.GymImplBase{
 
         @Override
-        public void sendObservation(ObservationRequest req, StreamObserver<ActionReply> responseObserver) {
-            ActionReply reply = ActionReply.newBuilder().setActionChoice(1).build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
+        public void step(StepRequest req, StreamObserver<Observation> responseObserver){
+           Observation.Builder obs = Observation.newBuilder();
+           obs.setDone(false);
+           Observation returnObs = obs.build();
+
+           responseObserver.onNext(returnObs);
         }
     }
 }
