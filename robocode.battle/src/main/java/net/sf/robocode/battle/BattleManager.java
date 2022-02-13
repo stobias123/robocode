@@ -318,7 +318,7 @@ public class BattleManager implements IBattleManager {
 		replayBattle();
 	}
 
-	private boolean isPaused() {
+	public boolean isPaused() {
 		return (pauseCount != 0);
 	}
 

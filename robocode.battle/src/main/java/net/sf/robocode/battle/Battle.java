@@ -69,7 +69,7 @@ public class Battle extends BaseBattle {
 
 	// Objects in the battle
 	private int robotsCount;
-	private List<RobotPeer> robots = new ArrayList<RobotPeer>();
+	public List<RobotPeer> robots = new ArrayList<RobotPeer>();
 	private List<ContestantPeer> contestants = new ArrayList<ContestantPeer>();
 	private final List<BulletPeer> bullets = new CopyOnWriteArrayList<BulletPeer>();
 
