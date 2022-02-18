@@ -42,7 +42,17 @@ public class GymBattle extends Battle {
 
     void setup(RobotSpecification[] battlingRobotsList, BattleProperties battleProps, boolean paused) {
         super.setup(battlingRobotsList, battleProps, paused);
-
+        int gymBotCounter = 0;
+        for (RobotPeer robot : this.robots) {
+            Robot testBot = (Robot) robot.getRobotObject();
+            if (robot.toString().contains("Gym")) {
+                gymBotCounter++;
+                gymBot = (GymRobot) robot.getRobotObject();
+            }
+        }
+        if(gymBotCounter > 1){
+            logMessage("[ERROR] - MORE THAN 1 GYMBOT");
+        }
         try {
             startServer();
         } catch (IOException e) {
@@ -54,12 +64,18 @@ public class GymBattle extends Battle {
 
     @Override
     protected void runTurn() {
-        int gymBotCounter = 0;
-        for (RobotPeer robot : this.robots) {
-            Robot testBot = (Robot) robot.getRobotObject();
-            if (robot.toString().contains("Gym")) {
-                gymBotCounter++;
-                gymBot = (GymRobot) robot.getRobotObject();
+        if(gymBot == null){
+            for (RobotPeer robot : this.robots) {
+                logMessage("Checking gymbots");
+                Robot testBot = (Robot) robot.getRobotObject();
+                if (robot.toString().contains("Gym")) {
+                    gymBot = (GymRobot) robot.getRobotObject();
+                    if(gymBot == null) {
+                        logMessage("Bot isnull");
+                    } else {
+                        break;
+                    }
+                }
             }
         }
         super.runTurn();
@@ -84,17 +100,6 @@ public class GymBattle extends Battle {
 
         @Override
         public Response act(final Request req) throws Exception {
-            for (RobotPeer robot : this.battle.robots) {
-                Robot testBot = (Robot) robot.getRobotObject();
-                if (robot.toString().contains("Gym")) {
-                    gymBot = (GymRobot) robot.getRobotObject();
-                    if(gymBot == null) {
-                        logMessage("Bot isnull");
-                    } else {
-                        break;
-                    }
-                }
-            }
             String json = new RqPrint(req).printBody();
             logMessage("json body was: " + json);
             AgentRequest action = new ObjectMapper().readValue(json, AgentRequest.class);
