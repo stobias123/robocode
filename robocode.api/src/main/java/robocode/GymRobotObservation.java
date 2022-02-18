@@ -9,11 +9,51 @@ import org.takes.rs.RsWithStatus;
 import javax.xml.ws.Response;
 import java.util.Map;
 
-public abstract class GymRobotObservation {
-    public String observation;
-    public double reward;
-    public boolean done;
-    public Map<String,String> info;
+public class GymRobotObservation {
+    public GymRobotObservation(String observation, double reward, boolean done, Map<String, String> info) {
+        this.observation = observation;
+        this.reward = reward;
+        this.done = done;
+        this.info = info;
+    }
+
+    private String observation;
+    private double reward;
+    private boolean done;
+    private Map<String,String> info;
+
+    public String getObservation() {
+        return observation;
+    }
+
+    public void setObservation(String observation) {
+        this.observation = observation;
+    }
+
+    public double getReward() {
+        return reward;
+    }
+
+    public void setReward(double reward) {
+        this.reward = reward;
+    }
+
+    public boolean isDone() {
+        return done;
+    }
+
+    public void setDone(boolean done) {
+        this.done = done;
+    }
+
+    public Map<String, String> getInfo() {
+        return info;
+    }
+
+    public void setInfo(Map<String, String> info) {
+        this.info = info;
+    }
+
 
     public RsWithHeader toResponse() throws JsonProcessingException {
             return new RsWithHeader(

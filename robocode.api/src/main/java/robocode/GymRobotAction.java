@@ -1,4 +1,5 @@
 package robocode;
 
-public abstract class GymRobotAction {
+public class GymRobotAction {
+    public int actionChoice;
 }

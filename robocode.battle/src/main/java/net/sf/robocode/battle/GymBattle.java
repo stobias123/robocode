@@ -28,6 +28,10 @@ import robocode.GymRobotObservation;
 import robocode.control.RobotSpecification;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Random;
 
 import static net.sf.robocode.io.Logger.logMessage;
 
@@ -50,7 +54,7 @@ public class GymBattle extends Battle {
                 gymBot = (GymRobot) robot.getRobotObject();
             }
         }
-        if(gymBotCounter > 1){
+        if (gymBotCounter > 1) {
             logMessage("[ERROR] - MORE THAN 1 GYMBOT");
         }
         try {
@@ -64,13 +68,13 @@ public class GymBattle extends Battle {
 
     @Override
     protected void runTurn() {
-        if(gymBot == null){
+        if (gymBot == null) {
             for (RobotPeer robot : this.robots) {
                 logMessage("Checking gymbots");
                 Robot testBot = (Robot) robot.getRobotObject();
                 if (robot.toString().contains("Gym")) {
                     gymBot = (GymRobot) robot.getRobotObject();
-                    if(gymBot == null) {
+                    if (gymBot == null) {
                         logMessage("Bot isnull");
                     } else {
                         break;
@@ -101,32 +105,49 @@ public class GymBattle extends Battle {
         @Override
         public Response act(final Request req) throws Exception {
             String json = new RqPrint(req).printBody();
-            logMessage("json body was: " + json);
-            AgentRequest action = new ObjectMapper().readValue(json, AgentRequest.class);
-            GymRobotObservation obs = gymBot.step(action);
+            GymRobotAction action = new ObjectMapper().readValue(json, GymRobotAction.class);
+            if (gymBot == null) {
+                for (RobotPeer robot : this.battle.robots) {
+                    logMessage("Checking gymbots");
+                    Robot testBot = (Robot) robot.getRobotObject();
+                    if (testBot != null && robot.toString().contains("Gym")) {
+                        gymBot = (GymRobot) robot.getRobotObject();
+                        if (gymBot == null) {
+                            logMessage("Bot isnull");
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            if(gymBot != null){
+                GymRobotObservation obs = gymBot.step(action);
+                this.battle.resume();
+                return obs.toResponse();
+            }
             // We want to call gym.step.
             this.battle.resume();
-
+            GymRobotObservation obs = new GymRobotObservation( "", 0, false, new HashMap<String,String>());
             return obs.toResponse();
         }
 
         @Override
         public void run() {
+             //Random random = new Random();
+             //int port = random.nextInt(8888- 8888) + 8888;
+            int port = 8888;
+            logMessage("Port is " + port);
             try {
                 new FtBasic(
                         new TkFork(
                                 new FkRegex("/step",
                                         new TkFork(
-                                                new FkMethods("POST", new GymProxy(this.battle)
-                                                )))), 8888).start(Exit.NEVER);
+                                                new FkMethods("POST", this
+                                                )))), port).start(Exit.NEVER);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static final class AgentRequest extends GymRobotAction {
-        public int actionChoice;
     }
 
 }
