@@ -24,8 +24,7 @@ import robocode.AdvancedRobot;
 
 public abstract class GymRobot extends AdvancedRobot {
 
-    abstract IGymRobotObservation observe();
-    abstract void act(IGymRobotAction action);
-
+    public abstract GymRobotObservation step(GymRobotAction action);
+    public abstract void act(GymRobotAction action);
 }
 

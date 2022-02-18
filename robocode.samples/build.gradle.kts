@@ -5,6 +5,8 @@ plugins {
 
 dependencies {
     implementation(project(":robocode.api"))
+    implementation("org.takes:takes:1.19")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
 }
 
 description = "Robocode Samples"

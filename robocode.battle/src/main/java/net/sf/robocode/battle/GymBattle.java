@@ -1,93 +1,127 @@
 package net.sf.robocode.battle;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import net.sf.robocode.battle.events.BattleEventDispatcher;
-import net.sf.robocode.grpc.grpcServer.BattleServer;
+import net.sf.robocode.battle.peer.RobotPeer;
 import net.sf.robocode.host.ICpuManager;
 import net.sf.robocode.host.IHostManager;
-import net.sf.robocode.recording.BattlePlayer;
 import net.sf.robocode.settings.ISettingsManager;
 
-import co.bird.battlebots.toby.proto.ActionReply;
-import co.bird.battlebots.toby.proto.GymGrpc;
-import co.bird.battlebots.toby.proto.StepRequest;
-import co.bird.battlebots.toby.proto.Observation;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-import io.grpc.stub.StreamObserver;
-import sun.awt.Mutex;
+import org.takes.Request;
+import org.takes.Response;
+import org.takes.Take;
+import org.takes.facets.fork.FkMethods;
+import org.takes.facets.fork.FkRegex;
+import org.takes.facets.fork.TkFork;
+import org.takes.facets.fork.TkMethods;
+import org.takes.http.Exit;
+import org.takes.rq.RqPrint;
+import org.takes.http.FtBasic;
+import org.takes.rs.*;
+import org.takes.rs.RsJson;
+import org.takes.rs.xe.XeSource;
+import robocode.*;
+import robocode.GymRobotAction;
+import robocode.GymRobotObservation;
+import robocode.control.RobotSpecification;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import static net.sf.robocode.io.Logger.logMessage;
 
 // This server will annoyingly pause after _every turn_
 // It also starts a GRPC server.
 public class GymBattle extends Battle {
-    private Server server;
+    GymRobot gymBot = null;
 
     public GymBattle(ISettingsManager properties, IBattleManager battleManager, IHostManager hostManager, ICpuManager cpuManager, BattleEventDispatcher eventDispatcher) throws IOException {
-        super(properties,battleManager,hostManager,cpuManager,eventDispatcher);
-        startServer();
+        super(properties, battleManager, hostManager, cpuManager, eventDispatcher);
     }
+
+    void setup(RobotSpecification[] battlingRobotsList, BattleProperties battleProps, boolean paused) {
+        super.setup(battlingRobotsList, battleProps, paused);
+
+        try {
+            startServer();
+        } catch (IOException e) {
+            logMessage("[ERROR] PROBLEM STARTING REMOTE ACTION SERVER");
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     protected void runTurn() {
+        int gymBotCounter = 0;
+        for (RobotPeer robot : this.robots) {
+            Robot testBot = (Robot) robot.getRobotObject();
+            if (robot.toString().contains("Gym")) {
+                gymBotCounter++;
+                gymBot = (GymRobot) robot.getRobotObject();
+            }
+        }
         super.runTurn();
         this.pause();
     }
 
 
-    public void startServer() throws IOException {
-        /* The port on which the server should run */
-        int port = 50051;
-        server = ServerBuilder.forPort(port)
-                .addService(new ServerImpl())
-                .build()
-                .start();
-        logMessage("Server started, listening on " + port);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println("*** shutting down gRPC server since JVM is shutting down");
-                try {
-                    GymBattle.this.stop();
-                } catch (InterruptedException e) {
-                    e.printStackTrace(System.err);
-                }
-                System.err.println("*** server shut down");
-            }
-        });
+    private void startServer() throws IOException {
+        GymProxy server = new GymProxy(this);
+        Thread serverThread = new Thread(Thread.currentThread().getThreadGroup(), server);
+        serverThread.setPriority(Thread.NORM_PRIORITY);
+        serverThread.setName("Server Thread");
+        serverThread.start();
     }
 
-    private void stop() throws InterruptedException {
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+    public final class GymProxy implements Take, Runnable {
+        Battle battle;
+
+        public GymProxy(Battle battle) {
+            this.battle = battle;
         }
-    }
 
-    /**
-     * Await termination on the main thread since the grpc library uses daemon threads.
-     */
-    private void blockUntilShutdown() throws InterruptedException {
-        if (server != null) {
-            server.awaitTermination();
-        }
-    }
-
-
-
-    static class ServerImpl extends GymGrpc.GymImplBase {
         @Override
-        public void step(StepRequest req, StreamObserver<Observation> responseObserver) {
-            logMessage("stepping.");
-            Observation.Builder obs = Observation.newBuilder();
-            obs.setDone(false);
-            Observation returnObs = obs.build();
+        public Response act(final Request req) throws Exception {
+            for (RobotPeer robot : this.battle.robots) {
+                Robot testBot = (Robot) robot.getRobotObject();
+                if (robot.toString().contains("Gym")) {
+                    gymBot = (GymRobot) robot.getRobotObject();
+                    if(gymBot == null) {
+                        logMessage("Bot isnull");
+                    } else {
+                        break;
+                    }
+                }
+            }
+            String json = new RqPrint(req).printBody();
+            logMessage("json body was: " + json);
+            AgentRequest action = new ObjectMapper().readValue(json, AgentRequest.class);
+            GymRobotObservation obs = gymBot.step(action);
+            // We want to call gym.step.
+            this.battle.resume();
 
-            responseObserver.onNext(returnObs);
+            return obs.toResponse();
+        }
+
+        @Override
+        public void run() {
+            try {
+                new FtBasic(
+                        new TkFork(
+                                new FkRegex("/step",
+                                        new TkFork(
+                                                new FkMethods("POST", new GymProxy(this.battle)
+                                                )))), 8888).start(Exit.NEVER);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
+
+    public static final class AgentRequest extends GymRobotAction {
+        public int actionChoice;
+    }
+
 }
