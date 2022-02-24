@@ -27,7 +27,7 @@ class TobyGymBot : GymRobot() {
     // Radar needs some initialized values from the first run call - so we initialize late.
     lateinit var radar: AdvancedRadar
     lateinit var commander: RobotCommands
-    var draw = DrawUtils(this)
+    var draw = DrawUtils()
     var enemies: HashMap<String, Point> = HashMap()
     var initialized = false
     var mapObs = HashMap<String,RobotObservation>()
@@ -50,7 +50,7 @@ class TobyGymBot : GymRobot() {
         }
         while (true) {
             this.isAdjustRadarForGunTurn = true
-            this.turnRadarLeft(90.0 )
+            this.turnRadarLeft(45.0 )
             radarTurns += 1
             act(lastChosenAction)
             execute()
@@ -70,7 +70,7 @@ class TobyGymBot : GymRobot() {
           if(energyDelta >0){
              //MakeWave/
               val enemyLocation = this.radar.enemyLocationFromEvent(e)
-              var wave = EnemyWave(_fieldRect, fireTime = time, fireLocation = enemyLocation, robot=this)
+              val wave = EnemyWave(_fieldRect, fireTime = time, fireLocation = enemyLocation, robot=this)
               wave.bulletVelocity = Rules.getBulletSpeed(energyDelta)
               // Assume they shot at us.
               // Get absolute bearing from target to us
@@ -87,44 +87,37 @@ class TobyGymBot : GymRobot() {
 
     fun getView(): String {
                 // this is our view. We use this image to send RGB Array over radio.
-        val image = BufferedImage(width.toInt(), height.toInt(), BufferedImage.TYPE_3BYTE_BGR)
+        this.others
+        val image = BufferedImage(battleFieldWidth.toInt(),  battleFieldHeight.toInt(), BufferedImage.TYPE_3BYTE_BGR)
         val g2 = image.createGraphics()
-        println(this.mapObs.size)
+        g2.color = Color.blue
         this.mapObs.forEach { (k, obs) ->
-            draw.drawProbableRobotRadius(obs)
+            draw.drawProbableRobotRadius(g2,obs)
+            draw.drawSelf(g2,this.x,this.y)
             val source = Point(this.x.toInt(),this.y.toInt())
             val target = obs.location
         }
+
         this._enemyWaves.forEach { wave ->
-            // Draw on the absolute bearing oif the line, this is where the bullet is going to go.
-            val waveAbsoluteDirection = Utils.normalAbsoluteAngle(wave.direction)
-            val estimatedBulletPosition = wave.project(wave.fireLocation, waveAbsoluteDirection, wave.distanceTraveled())
-            val waveEndPoints = wave.project(estimatedBulletPosition, waveAbsoluteDirection, 20.0)
-            this.graphics.color = Color.red
-            this.graphics.drawLine(estimatedBulletPosition.x.toInt(),estimatedBulletPosition.y.toInt(), waveEndPoints.x.toInt(),waveEndPoints.y.toInt())
-            g2.color = Color.red
-            g2.drawLine(estimatedBulletPosition.x.toInt(),estimatedBulletPosition.y.toInt(), waveEndPoints.x.toInt(),waveEndPoints.y.toInt())
-            g2.stroke = BasicStroke(2f);
-            val radius = 20
-            g2.drawOval(this.x.toInt(),this.y.toInt(),radius,radius)
-            //println("Estimating bullet has moved ${wave.distanceTraveled()}")
+            draw.drawWave(g2, wave)
         }
 
-        var baos = ByteArrayOutputStream()
+        val baos = ByteArrayOutputStream()
         ImageIO.write(image,"png",baos)
         val bytes = baos.toByteArray()
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    // actOnMessage will take an action from a discrete space of length 16.
-    // It will then perform bitwise and to find if the chosen action (from a binary representation of the action) was included in the chosen action.
-    // I'm fucking clever.
+
     override fun step(action: GymRobotAction): GymRobotObservation {
         val info = mutableMapOf("foo" to "Bar")
         lastChosenAction = action
         return TobyBotObservation(observation = getView(), 2.0, false, info)
     }
 
+    // actOnMessage will take an action from a discrete space of length 16.
+    // It will then perform bitwise and to find if the chosen action (from a binary representation of the action) was included in the chosen action.
+    // I'm fucking clever.
     override fun act(action: GymRobotAction) {
         if(action.actionChoice and Keys.FORWARD.int > 0) { this.ahead(8.0)}
         if(action.actionChoice and Keys.BACK.int > 0) { this.back(8.0)}
@@ -132,9 +125,6 @@ class TobyGymBot : GymRobot() {
         if(action.actionChoice and Keys.RIGHT.int > 0) { this.turnRight(20.0)}
     }
 
-    fun sendImage() {
-
-    }
     /*
     override fun onStatus(e: StatusEvent?) {
         super.onStatus(e)
