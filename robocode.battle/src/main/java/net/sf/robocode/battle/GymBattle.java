@@ -39,6 +39,7 @@ import static net.sf.robocode.io.Logger.logMessage;
 // It also starts a GRPC server.
 public class GymBattle extends Battle {
     GymRobot gymBot = null;
+    Thread serverThread;
 
     public GymBattle(ISettingsManager properties, IBattleManager battleManager, IHostManager hostManager, ICpuManager cpuManager, BattleEventDispatcher eventDispatcher) throws IOException {
         super(properties, battleManager, hostManager, cpuManager, eventDispatcher);
@@ -89,10 +90,13 @@ public class GymBattle extends Battle {
 
     private void startServer() throws IOException {
         GymProxy server = new GymProxy(this);
-        Thread serverThread = new Thread(Thread.currentThread().getThreadGroup(), server);
+        this.serverThread = new Thread(Thread.currentThread().getThreadGroup(), server);
         serverThread.setPriority(Thread.NORM_PRIORITY);
         serverThread.setName("Server Thread");
         serverThread.start();
+    }
+    private void stopServer() throws IOException {
+        this.serverThread.interrupt();
     }
 
     public final class GymProxy implements Take, Runnable {
@@ -120,14 +124,22 @@ public class GymBattle extends Battle {
                     }
                 }
             }
+            GymRobotObservation obs;
             if(gymBot != null){
-                GymRobotObservation obs = gymBot.step(action);
+                obs = gymBot.step(action);
+                // TODO: Refactor this into BattleManager.
+                if(this.battle.isRoundOver()){
+                    logMessage("Round over!");
+                }
+                if( gymBot.getEnergy() <= 0 ){
+                    obs.setDone(true);
+                }
                 this.battle.resume();
                 return obs.toResponse();
             }
             // We want to call gym.step.
             this.battle.resume();
-            GymRobotObservation obs = new GymRobotObservation( "", 0, false, new HashMap<String,String>());
+            obs = new GymRobotObservation( "", 0, false, new HashMap<String,String>());
             return obs.toResponse();
         }
 
