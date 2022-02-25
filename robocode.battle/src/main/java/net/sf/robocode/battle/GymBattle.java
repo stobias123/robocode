@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import net.sf.robocode.battle.events.BattleEventDispatcher;
+import net.sf.robocode.battle.gym.GymProxy;
 import net.sf.robocode.battle.peer.RobotPeer;
 import net.sf.robocode.host.ICpuManager;
 import net.sf.robocode.host.IHostManager;
@@ -38,8 +39,7 @@ import static net.sf.robocode.io.Logger.logMessage;
 // This server will annoyingly pause after _every turn_
 // It also starts a GRPC server.
 public class GymBattle extends Battle {
-    GymRobot gymBot = null;
-    Thread serverThread;
+    private GymRobot gymBot = null;
 
     public GymBattle(ISettingsManager properties, IBattleManager battleManager, IHostManager hostManager, ICpuManager cpuManager, BattleEventDispatcher eventDispatcher) throws IOException {
         super(properties, battleManager, hostManager, cpuManager, eventDispatcher);
@@ -58,14 +58,15 @@ public class GymBattle extends Battle {
         if (gymBotCounter > 1) {
             logMessage("[ERROR] - MORE THAN 1 GYMBOT");
         }
-        try {
-            startServer();
-        } catch (IOException e) {
-            logMessage("[ERROR] PROBLEM STARTING REMOTE ACTION SERVER");
-            e.printStackTrace();
-        }
     }
 
+    public GymRobot getGymBot() {
+        return gymBot;
+    }
+
+    public void setGymBot(GymRobot gymBot) {
+        this.gymBot = gymBot;
+    }
 
     @Override
     protected void runTurn() {
@@ -85,81 +86,6 @@ public class GymBattle extends Battle {
         }
         super.runTurn();
         this.pause();
-    }
-
-
-    private void startServer() throws IOException {
-        GymProxy server = new GymProxy(this);
-        this.serverThread = new Thread(Thread.currentThread().getThreadGroup(), server);
-        serverThread.setPriority(Thread.NORM_PRIORITY);
-        serverThread.setName("Server Thread");
-        serverThread.start();
-    }
-    private void stopServer() throws IOException {
-        this.serverThread.interrupt();
-    }
-
-    public final class GymProxy implements Take, Runnable {
-        Battle battle;
-
-        public GymProxy(Battle battle) {
-            this.battle = battle;
-        }
-
-        @Override
-        public Response act(final Request req) throws Exception {
-            String json = new RqPrint(req).printBody();
-            GymRobotAction action = new ObjectMapper().readValue(json, GymRobotAction.class);
-            if (gymBot == null) {
-                for (RobotPeer robot : this.battle.robots) {
-                    logMessage("Checking gymbots");
-                    Robot testBot = (Robot) robot.getRobotObject();
-                    if (testBot != null && robot.toString().contains("Gym")) {
-                        gymBot = (GymRobot) robot.getRobotObject();
-                        if (gymBot == null) {
-                            logMessage("Bot isnull");
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-            GymRobotObservation obs;
-            if(gymBot != null){
-                obs = gymBot.step(action);
-                // TODO: Refactor this into BattleManager.
-                if(this.battle.isRoundOver()){
-                    logMessage("Round over!");
-                }
-                if( gymBot.getEnergy() <= 0 ){
-                    obs.setDone(true);
-                }
-                this.battle.resume();
-                return obs.toResponse();
-            }
-            // We want to call gym.step.
-            this.battle.resume();
-            obs = new GymRobotObservation( "", 0, false, new HashMap<String,String>());
-            return obs.toResponse();
-        }
-
-        @Override
-        public void run() {
-             //Random random = new Random();
-             //int port = random.nextInt(8888- 8888) + 8888;
-            int port = 8888;
-            logMessage("Port is " + port);
-            try {
-                new FtBasic(
-                        new TkFork(
-                                new FkRegex("/step",
-                                        new TkFork(
-                                                new FkMethods("POST", this
-                                                )))), port).start(Exit.NEVER);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }

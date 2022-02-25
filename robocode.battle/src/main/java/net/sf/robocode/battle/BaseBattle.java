@@ -268,7 +268,7 @@ public abstract class BaseBattle implements IBattle, Runnable {
 		}
 	}
 
-	protected boolean isRoundOver() {
+	public boolean isRoundOver() {
 		return (endTimer > 5 * TURNS_DISPLAYED_AFTER_ENDING);
 	}
 

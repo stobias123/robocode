@@ -9,6 +9,7 @@ package net.sf.robocode.battle;
 
 
 import net.sf.robocode.battle.events.BattleEventDispatcher;
+import net.sf.robocode.battle.gym.GymProxy;
 import net.sf.robocode.core.Container;
 import net.sf.robocode.host.ICpuManager;
 import net.sf.robocode.host.IHostManager;
@@ -50,8 +51,11 @@ public class BattleManager implements IBattleManager {
 	private final IRecordManager recordManager;
 	private final IRepositoryManager repositoryManager;
 
-	private volatile IBattle battle;
+	public volatile IBattle battle;
 	private Thread battleThread;
+	private Thread serverThread;
+	private GymProxy server;
+
 	private BattleProperties battleProperties;
 
 	private final BattleEventDispatcher battleEventDispatcher;
@@ -71,7 +75,25 @@ public class BattleManager implements IBattleManager {
 		this.battleEventDispatcher = battleEventDispatcher;
 		Logger.setLogListener(battleEventDispatcher);
 		battleProperties = new BattleProperties(properties);
+		try {
+			this.startServer();
+		}
+		catch (Exception e) {
+			logMessage("Omg can't start server I shit my pants.");
+		}
 	}
+
+    private void startServer() throws IOException {
+        this.server = new GymProxy(this);
+        this.serverThread = new Thread(Thread.currentThread().getThreadGroup(), server);
+        serverThread.setPriority(Thread.NORM_PRIORITY);
+        serverThread.setName("Server Thread");
+        serverThread.start();
+    }
+
+    private void stopServer() throws IOException {
+        this.serverThread.interrupt();
+    }
 
 	public synchronized void cleanup() {
 		if (battle != null) {
@@ -164,6 +186,7 @@ public class BattleManager implements IBattleManager {
 
 		// Start the realBattle thread
 		battleThread.start();
+		this.server.setBattle(realBattle);
 
 		// Wait until the realBattle is running and ended.
 		// This must be done as a new realBattle could be started immediately after this one causing
@@ -311,6 +334,8 @@ public class BattleManager implements IBattleManager {
 
 	public synchronized void restart() {
 		// Start new battle. The old battle is automatically stopped
+		this.server.setBattle(null);
+		this.server.setGymBot(null);
 		startNewBattle(battleProperties, false, false);
 	}
 
