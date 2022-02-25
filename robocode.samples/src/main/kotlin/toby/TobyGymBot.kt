@@ -50,7 +50,7 @@ class TobyGymBot : GymRobot() {
         }
         while (true) {
             this.isAdjustRadarForGunTurn = true
-            this.turnRadarLeft(45.0 )
+            this.turnRadarLeft(Double.POSITIVE_INFINITY )
             radarTurns += 1
             act(lastChosenAction)
             execute()
