@@ -24,8 +24,6 @@ import org.takes.rs.*;
 import org.takes.rs.RsJson;
 import org.takes.rs.xe.XeSource;
 import robocode.*;
-import robocode.GymRobotAction;
-import robocode.GymRobotObservation;
 import robocode.control.RobotSpecification;
 
 import java.io.IOException;
@@ -39,7 +37,7 @@ import static net.sf.robocode.io.Logger.logMessage;
 // This server will annoyingly pause after _every turn_
 // It also starts a GRPC server.
 public class GymBattle extends Battle {
-    private GymRobot gymBot = null;
+    GymRobot gymBot = null;
 
     public GymBattle(ISettingsManager properties, IBattleManager battleManager, IHostManager hostManager, ICpuManager cpuManager, BattleEventDispatcher eventDispatcher) throws IOException {
         super(properties, battleManager, hostManager, cpuManager, eventDispatcher);
@@ -72,7 +70,6 @@ public class GymBattle extends Battle {
     protected void runTurn() {
         if (gymBot == null) {
             for (RobotPeer robot : this.robots) {
-                logMessage("Checking gymbots");
                 Robot testBot = (Robot) robot.getRobotObject();
                 if (robot.toString().contains("Gym")) {
                     gymBot = (GymRobot) robot.getRobotObject();

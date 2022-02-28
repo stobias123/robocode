@@ -9,7 +9,6 @@ dependencies {
     implementation(project(":robocode.host"))
     implementation("org.picocontainer:picocontainer:2.14.2")
     runtimeOnly(project(":robocode.repository"))
-    implementation(project(":robocode.grpc"))
     implementation("org.takes:takes:1.19")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
 }

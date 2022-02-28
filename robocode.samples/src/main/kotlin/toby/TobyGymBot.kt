@@ -27,6 +27,9 @@ class TobyGymBot : GymRobot() {
     // Radar needs some initialized values from the first run call - so we initialize late.
     lateinit var radar: AdvancedRadar
     lateinit var commander: RobotCommands
+
+    lateinit var rewardTracker: RewardTracker
+
     var draw = DrawUtils()
     var enemies: HashMap<String, Point> = HashMap()
     var initialized = false
@@ -40,19 +43,21 @@ class TobyGymBot : GymRobot() {
     var WALL_STICK = 160.0
     var _enemyWaves = ArrayList<EnemyWave>()
 
-
     override fun run() {
         if(! initialized) {
             // Radar and commander = Internal commands.
             radar = AdvancedRadar(this)
             commander = RobotCommands(this)
+            rewardTracker = RewardTracker()
             initialized = true
         }
+        this.isAdjustRadarForGunTurn = true
+        //this.turnRadarLeft(Double.POSITIVE_INFINITY)
         while (true) {
-            this.isAdjustRadarForGunTurn = true
-            this.turnRadarLeft(Double.POSITIVE_INFINITY )
+            this.turnRadarLeft(35.0)
             radarTurns += 1
             act(lastChosenAction)
+            this.rewardTracker.turnTick()
             execute()
         }
     }
@@ -61,8 +66,17 @@ class TobyGymBot : GymRobot() {
         super.onDeath(event)
     }
 
+    override fun onBulletHit(event: BulletHitEvent?) {
+        super.onBulletHit(event)
+        this.rewardTracker.receiveBulletHitEvent()
+    }
+
+    override fun onHitByBullet(event: HitByBulletEvent?) {
+        super.onHitByBullet(event)
+        this.rewardTracker.receiveHitByBulletEvent()
+    }
+
     override fun onScannedRobot(e: ScannedRobotEvent) {
-        print("Scanned Robot")
         val time = getTime() - 1
         if(mapObs[e.name] != null){
           val lastScannedEvent = mapObs[e.name]!!.event
@@ -109,10 +123,14 @@ class TobyGymBot : GymRobot() {
     }
 
 
+    fun getReward(): Double {
+        return this.rewardTracker.reward
+    }
+
     override fun step(action: GymRobotAction): GymRobotObservation {
         val info = mutableMapOf("foo" to "Bar")
         lastChosenAction = action
-        return TobyBotObservation(observation = getView(), 2.0, false, info)
+        return TobyBotObservation(observation = getView(), getReward(), false, info)
     }
 
     // actOnMessage will take an action from a discrete space of length 16.
@@ -123,6 +141,7 @@ class TobyGymBot : GymRobot() {
         if(action.actionChoice and Keys.BACK.int > 0) { this.back(8.0)}
         if(action.actionChoice and Keys.LEFT.int > 0) { this.turnLeft(20.0)}
         if(action.actionChoice and Keys.RIGHT.int > 0) { this.turnRight(20.0)}
+        if(action.actionChoice and Keys.FIRE.int > 0) { this.fireBullet(10.0)}
     }
 
     /*

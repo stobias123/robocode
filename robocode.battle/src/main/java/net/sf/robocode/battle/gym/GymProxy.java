@@ -56,7 +56,6 @@ public final class GymProxy implements Take, Runnable {
         GymRobotAction action = new ObjectMapper().readValue(json, GymRobotAction.class);
         if (gymBot == null) {
             for (RobotPeer robot : this.battle.robots) {
-                logMessage("Checking gymbots");
                 Robot testBot = (Robot) robot.getRobotObject();
                 if (testBot != null && robot.toString().contains("Gym")) {
                     gymBot = (GymRobot) robot.getRobotObject();
@@ -89,7 +88,7 @@ public final class GymProxy implements Take, Runnable {
 
     @Override
     public void run() {
-        int port = 8888;
+        int port = 8000;
         logMessage("Port is " + port);
         try {
             new FtBasic(
