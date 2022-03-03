@@ -6,4 +6,4 @@ RUN java -jar robocode-*-setup.jar || true
 
 WORKDIR /root/robocode
 ENTRYPOINT ["./robocode.sh"]
-CMD ["-battle", "/root/robocode/battles/demo.battle", "-nosound", "-nodisplay"]
+CMD ["-battle", "/root/robocode/battles/demo.battle", "-nosound", "-nodisplay", "-tps", "1000"]
