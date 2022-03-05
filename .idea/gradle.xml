@@ -11,6 +11,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/buildSrc" />
+            <option value="$PROJECT_DIR$/protos" />
             <option value="$PROJECT_DIR$/robocode.api" />
             <option value="$PROJECT_DIR$/robocode.battle" />
             <option value="$PROJECT_DIR$/robocode.content" />
@@ -26,6 +27,7 @@
             <option value="$PROJECT_DIR$/robocode.tests.robots" />
             <option value="$PROJECT_DIR$/robocode.ui" />
             <option value="$PROJECT_DIR$/robocode.ui.editor" />
+            <option value="$PROJECT_DIR$/stub" />
           </set>
         </option>
       </GradleProjectSettings>
