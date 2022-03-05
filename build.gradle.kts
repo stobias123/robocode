@@ -1,7 +1,23 @@
 plugins {
     id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
+    id("java")
+    id("com.google.protobuf") version "0.8.18" apply false
+    id("org.jetbrains.kotlin.jvm") version "1.4.10"
     idea
 }
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+    }
+}
+
+ext["grpcVersion"] = "1.39.0" // need to wait for grpc kotlin to move past this
+ext["grpcKotlinVersion"] = "1.2.0" // CURRENT_GRPC_KOTLIN_VERSION
+ext["protobufVersion"] = "3.19.1"
+ext["coroutinesVersion"] = "1.5.2"
 
 description = "Robocode - Build the best - destroy the rest!"
 

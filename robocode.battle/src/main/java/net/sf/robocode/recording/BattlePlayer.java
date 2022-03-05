@@ -112,7 +112,7 @@ public final class BattlePlayer extends BaseBattle {
 	}
 
 	@Override
-	protected boolean isRoundOver() {
+    public boolean isRoundOver() {
 		final boolean end = getTime() >= recordManager.recordInfo.turnsInRounds[getRoundNum()] - 1;
 
 		if (end) {
