@@ -1,0 +1,9 @@
+#Battle Properties
+#Fri Feb 25 10:47:00 PST 2022
+robocode.battle.numRounds=10
+robocode.battle.gunCoolingRate=0.1
+robocode.battleField.width=800
+robocode.battle.selectedRobots=sample.Corners,toby.TobyGymBot*
+robocode.battle.rules.inactivityTime=450
+robocode.battle.hideEnemyNames=true
+robocode.battleField.height=600
